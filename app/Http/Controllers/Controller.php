@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Log\Logger;
+use Illuminate\Support\Facades\Http;
 use stdClass;
 
 abstract class Controller
@@ -18,22 +20,19 @@ abstract class Controller
         $this->secret = $secret;
     }
 
-    public function curl_payment_init(string $url, array $payload): array
+    /**
+     * @throws ConnectionException
+     */
+    public function http_payment_init(string $url, array $payload): array
     {
         $jwt = $this->encode($payload);
-        $data = '{"payload":"' . $jwt . '"}';
+        $data = ['payload' => $jwt];
 
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/*+json',
+        ])->post($url, $data);
 
-        $headers[] = 'Content-Type: application/*+json';
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $decoded = json_decode($response, true);
+        $decoded = $response->json();
         $payloadResponse = $decoded['payload'];
         $decodedPayload = $this->decode($payloadResponse);
         return (array)$decodedPayload;

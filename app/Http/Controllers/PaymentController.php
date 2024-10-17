@@ -18,7 +18,7 @@ class PaymentController extends Controller
         parent::__construct($logger, env('SECRET_KEY', "ECC4E54DBA738857B84A7EBC6B5DC7187B8DA68750E88AB53AAA41F548D6F2D9"));
     }
 
-    public function initiatePayment(Request $request): Application|JsonResponse|Redirector|RedirectResponse
+    public function initiatePayment(Request $request): Application|\Illuminate\Http\Response|JsonResponse|Redirector|RedirectResponse|\Illuminate\Contracts\Routing\ResponseFactory
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric',
@@ -47,7 +47,7 @@ class PaymentController extends Controller
         ];
 
         try {
-            $responseData = $this->curl_payment_init($url, $payload);
+            $responseData = $this->http_payment_init($url, $payload);
         } catch (Exception $e) {
             $this->logger->error('Payment initiation failed', ['error' => $e->getMessage()]);
             return response()->json([
@@ -66,7 +66,7 @@ class PaymentController extends Controller
                 return redirect($webPaymentUrl);
             }
 
-            return response()->json(['paymentUrl' => $webPaymentUrl]);
+            return response($webPaymentUrl);
         } else {
             // Handle errors
             $this->logger->error('Payment initiation failed', ['response' => $responseData]);
