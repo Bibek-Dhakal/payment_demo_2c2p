@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Log\Logger;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
@@ -17,12 +18,22 @@ class PaymentController extends Controller
         parent::__construct($logger, env('SECRET_KEY', "ECC4E54DBA738857B84A7EBC6B5DC7187B8DA68750E88AB53AAA41F548D6F2D9"));
     }
 
-    public function initiatePayment(): Application|JsonResponse|Redirector|RedirectResponse
+    public function initiatePayment(Request $request): Application|JsonResponse|Redirector|RedirectResponse
     {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $amount = $request->input('amount');
+
         $merchantID = env('MERCHANT_ID', 'JT01');
-        $currencyCode = env('CURRENCY_CODE', 'SGD');
+        $currencyCode = env('CURRENCY_CODE', 'NPR');
         $invoiceNo = time();
-        $amount = 1000.00;
+
         $url = env('PAYMENT_API_URL', 'https://sandbox-pgw.2c2p.com/payment/4.3/paymenttoken');
         $payload = [
             'merchantID' => $merchantID,
@@ -44,7 +55,6 @@ class PaymentController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
             ], 500);
-//            return response()->json(['error' => 'Payment initiation failed'], 500);
         }
 
         // Check response and redirect
