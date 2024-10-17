@@ -61,7 +61,12 @@ class PaymentController extends Controller
         if (isset($responseData['respCode']) && $responseData['respCode'] === '0000') {
             // On success, redirect to the payment page
             $webPaymentUrl = $responseData['webPaymentUrl'];
-            return redirect($webPaymentUrl);
+
+            if (env('APP_ENV') === 'production') {
+                return redirect($webPaymentUrl);
+            }
+
+            return response()->json(['paymentUrl' => $webPaymentUrl]);
         } else {
             // Handle errors
             $this->logger->error('Payment initiation failed', ['response' => $responseData]);
