@@ -38,7 +38,7 @@ class PaymentController extends Controller
         $url = 'https://core.demo-paco.2c2p.com/api/2.0/Payment/prePaymentUI';
 
         $payload = [
-            'officeId' => 'your_office_id', // PUT YOUR OFFICE ID
+            'officeId' => 'aaa', // PUT YOUR OFFICE ID
             'terminalID' => 'your_terminal_id',  // PUT YOUR TERMINAL ID
             'orderNo' => $invoiceNo,
             'productDescription' => 'item 1',
@@ -61,9 +61,10 @@ class PaymentController extends Controller
 
         try {
             $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'content-type' => 'application/json',
-            ])->post($url, ['apiRequest' => $payload]);
+                'Authorization' => 'Bearer ' . $this->secret,  // PUT API KEY
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post($url, json_encode($payload));
 
             $responseData = $response->json();
 
@@ -82,7 +83,7 @@ class PaymentController extends Controller
                 }
             } else {
                 $this->logger->error('Payment initiation failed', ['response' => $responseData]);
-                return response()->json(['error' => $responseData['apiResponse']['responseDescription'] ?? 'Unknown error'], 400);
+                return response()->json(['error' => $responseData['title'] ?? 'Unknown error'], 400);
             }
         } catch (Exception $e) {
             $this->logger->error('Payment initiation failed', ['error' => $e->getMessage()]);
